@@ -1,5 +1,3 @@
-import math
-
 import pytest
 from dateutil.parser import parse
 
@@ -54,8 +52,18 @@ def test_merge_forecasts(forecasts):
 @pytest.fixture
 def forecasts():
     return [
-        OpenMeteoForecast(48, 11, [parse("2025-09-17")], {"daylight_duration": [1], "sunshine_duration": [4]}),
-        OpenMeteoForecast(49, 12, [parse("2025-09-17")], {"daylight_duration": [2], "sunshine_duration": [5]}),
+        OpenMeteoForecast(
+            48,
+            11,
+            [parse("2025-09-17")],
+            {"daylight_duration": [1], "sunshine_duration": [4]},
+        ),
+        OpenMeteoForecast(
+            49,
+            12,
+            [parse("2025-09-17")],
+            {"daylight_duration": [2], "sunshine_duration": [5]},
+        ),
         OpenMeteoForecast(
             48,
             11,
