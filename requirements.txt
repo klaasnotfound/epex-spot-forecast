@@ -1,0 +1,6 @@
+coverage
+python-dateutil
+pytest
+pytest-recording
+requests
+ruff

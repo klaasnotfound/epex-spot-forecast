@@ -1,0 +1,7 @@
+[run]
+source = src/
+branch = True
+omit = src/app.py
+
+[report]
+show_missing = True
