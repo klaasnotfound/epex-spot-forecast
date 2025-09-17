@@ -4,3 +4,4 @@ pytest
 pytest-recording
 requests
 ruff
+tox
