@@ -46,7 +46,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: covdata-${{ matrix.os }}
-          path: ./coverage.json
+          path: .coverage.*
+          include-hidden-files: true
 
   coverage:
     name: Coverage
