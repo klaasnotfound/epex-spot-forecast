@@ -45,8 +45,8 @@ jobs:
       - name: "Upload coverage data"
         uses: actions/upload-artifact@v4
         with:
-          name: covdata-${{ matrix.os }}
-          path: .coverage
+          name: covdata
+          path: .coverage.*
           include-hidden-files: true
 
   coverage:
@@ -69,8 +69,7 @@ jobs:
       - name: "Download coverage data"
         uses: actions/download-artifact@v5
         with:
-          pattern: covdata-*
-          merge-multiple: true
+          name: covdata
 
       - name: "Combine and report"
         run: |
