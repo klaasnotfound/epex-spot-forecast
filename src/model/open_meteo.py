@@ -1,15 +1,26 @@
 from datetime import datetime
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from dateutil.parser import parse
 
 
-class OpenMeteoDailyValues(TypedDict):
-    daylight_duration: list[float]
-    sunshine_duration: list[float]
+class OpenMeteoValues(TypedDict):
+    shortwave_radiation: list[float]
+    direct_radiation: list[float]
+    diffuse_radiation: list[float]
+    direct_normal_irradiance: list[float]
+    global_tilted_irradiance: list[float]
+    terrestrial_radiation: list[float]
+    weather_code: list[float]
+    cloud_cover: list[float]
+    cloud_cover_low: list[float]
+    cloud_cover_mid: list[float]
+    cloud_cover_high: list[float]
+    visibility: list[float]
+    precipitation: list[float]
 
 
-class OpenMeteoDailyTimeSeries(OpenMeteoDailyValues):
+class OpenMeteoTimeSeries(OpenMeteoValues):
     time: list[str]
 
 
@@ -21,14 +32,18 @@ class OpenMeteoForecastData(TypedDict):
     timezone: str
     timezone_abbreviation: str
     elevation: int
-    daily_units: dict[str, str]
-    daily: OpenMeteoDailyTimeSeries
+    hourly_units: dict[str, str]
+    hourly: OpenMeteoTimeSeries
+    daily_units: NotRequired[dict[str, str]]
+    daily: NotRequired[OpenMeteoTimeSeries]
 
 
 class OpenMeteoForecast:
     """Multi-day weather forecast from the OpenMeteo API"""
 
-    def __init__(self, lat: float, lon: float, days: list[datetime], vals: OpenMeteoDailyValues):
+    def __init__(
+        self, lat: float, lon: float, days: list[datetime], vals: OpenMeteoValues
+    ):
         assert lat >= -90 and lat <= 90, "Latitude must be within [-90, 90]"
         assert lon >= -180 and lon <= 180, "Longitude must be within [-180, 180]"
         assert "daylight_duration" in vals, "Value data must contain daylight duration"
@@ -46,7 +61,9 @@ class OpenMeteoForecast:
     @staticmethod
     def fromjson(data: OpenMeteoForecastData):
         days = [parse(d) for d in data["daily"]["time"]]
-        return OpenMeteoForecast(data["latitude"], data["longitude"], days, data["daily"])
+        return OpenMeteoForecast(
+            data["latitude"], data["longitude"], days, data["daily"]
+        )
 
     def __repr__(self):
         return f"OpenMeteoForecast ({self.lat}, {self.lon}) [{len(self.days)} day{'s'[: len(self.days) ^ 1]}]"
