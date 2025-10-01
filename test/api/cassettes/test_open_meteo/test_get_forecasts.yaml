@@ -1,0 +1,32 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.32.5
+    method: GET
+    uri: https://api.open-meteo.com/v1/forecast?latitude=48.662587,48.917408,52.505774&longitude=9.00161,11.4061,13.4244&daily=daylight_duration,sunshine_duration
+  response:
+    body:
+      string: '[{"latitude":48.66,"longitude":9.0,"generationtime_ms":0.15366077423095703,"utc_offset_seconds":0,"timezone":"GMT","timezone_abbreviation":"GMT","elevation":483.0,"daily_units":{"time":"iso8601","daylight_duration":"s","sunshine_duration":"s"},"daily":{"time":["2025-10-01","2025-10-02","2025-10-03","2025-10-04","2025-10-05","2025-10-06","2025-10-07"],"daylight_duration":[41953.60,41739.96,41526.32,41312.81,41099.58,40886.74,40674.44],"sunshine_duration":[31820.72,37806.34,26013.67,4473.42,35677.09,15077.71,36974.85]}},{"latitude":48.92,"longitude":11.4,"generationtime_ms":0.2467632293701172,"utc_offset_seconds":0,"timezone":"GMT","timezone_abbreviation":"GMT","elevation":450.0,"location_id":1,"daily_units":{"time":"iso8601","daylight_duration":"s","sunshine_duration":"s"},"daily":{"time":["2025-10-01","2025-10-02","2025-10-03","2025-10-04","2025-10-05","2025-10-06","2025-10-07"],"daylight_duration":[41939.70,41724.08,41508.47,41292.99,41077.78,40862.97,40648.70],"sunshine_duration":[36049.54,36069.92,36383.18,28800.00,28689.32,2394.23,30774.56]}},{"latitude":52.5,"longitude":13.419998,"generationtime_ms":0.10633468627929688,"utc_offset_seconds":0,"timezone":"GMT","timezone_abbreviation":"GMT","elevation":41.0,"location_id":2,"daily_units":{"time":"iso8601","daylight_duration":"s","sunshine_duration":"s"},"daily":{"time":["2025-10-01","2025-10-02","2025-10-03","2025-10-04","2025-10-05","2025-10-06","2025-10-07"],"daylight_duration":[41733.46,41488.39,41243.28,40998.29,40753.55,40509.23,40265.46],"sunshine_duration":[17805.32,36000.00,36000.00,27889.70,28001.33,0.00,32921.60]}}]'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - deflate
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 01 Oct 2025 19:41:27 GMT
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1

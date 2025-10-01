@@ -1,0 +1,32 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.32.5
+    method: GET
+    uri: https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&daily=daylight_duration,sunshine_duration
+  response:
+    body:
+      string: '{"latitude":52.52,"longitude":13.419998,"generationtime_ms":0.1100301742553711,"utc_offset_seconds":0,"timezone":"GMT","timezone_abbreviation":"GMT","elevation":38.0,"daily_units":{"time":"iso8601","daylight_duration":"s","sunshine_duration":"s"},"daily":{"time":["2025-10-01","2025-10-02","2025-10-03","2025-10-04","2025-10-05","2025-10-06","2025-10-07"],"daylight_duration":[41732.23,41486.97,41241.69,40996.51,40751.60,40507.10,40263.16],"sunshine_duration":[18602.27,36000.00,36000.00,27889.70,28001.33,0.00,32921.60]}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - deflate
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 01 Oct 2025 19:41:27 GMT
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1
