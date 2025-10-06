@@ -25,6 +25,7 @@ def test_init_table():
     con = duckdb.connect(":memory:")
     EpexMarketDataPoint.init_table(con)
     assert "epex_market" in f"{con.sql('SHOW ALL TABLES')}"
+    assert [(0,)] == con.sql("SELECT count(*) FROM epex_market").fetchall()
 
 
 def test_repr(market_data_point_1):
