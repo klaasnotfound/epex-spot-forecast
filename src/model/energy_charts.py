@@ -1,9 +1,9 @@
+import calendar
+import time
 from typing import NotRequired, TypedDict, Union
 
 from duckdb import DuckDBPyConnection
 from duckdb.typing import DuckDBPyType
-
-from src.model.persistable import Persistable
 
 
 class ApiI18nName(TypedDict):
@@ -30,11 +30,9 @@ class EpexMarketData(TypedDict):
     idc_av_price_eurmwh: float
     idc_low_price_eurmwh: float
     idc_high_price_eurmwh: float
-    idc_id3_price_eurmwh: float
-    idc_id1_price_eurmwh: float
 
 
-class EpexMarketDataPoint(Persistable):
+class EpexMarketDataPoint:
     """EPEX spot market price with associated power production info"""
 
     def __init__(self, ts: int, vals: EpexMarketData):
@@ -55,11 +53,34 @@ class EpexMarketDataPoint(Persistable):
         )
         stmt = f"""
         CREATE OR REPLACE TABLE epex_market (
-            ts TIMESTAMP_S,
+            ts TIMESTAMP_MS PRIMARY KEY,
             {col_str}
         );
         """
         con.execute(stmt)
 
+    @staticmethod
+    def upsert_many(data: list["EpexMarketDataPoint"], con: DuckDBPyConnection):
+        val_str = (
+            "("
+            + "), (".join(
+                [
+                    f"make_timestamp_ms({round(calendar.timegm(time.localtime(d.ts / 1e3)) * 1e3)}), "
+                    + ", ".join(
+                        [f"{getattr(d, k)}" for k in EpexMarketData.__annotations__]
+                    ).replace("None", "NULL")
+                    for d in data
+                ]
+            )
+            + ")"
+        )
+        stmt = f"""
+        INSERT OR IGNORE INTO epex_market VALUES
+        {val_str};
+        """
+        con.execute(stmt)
+
     def __repr__(self):
-        return f"EpexData: ({self.ts}) {self.idc_av_price_eurmwh:.2f} EUR/MWh"
+        return (
+            f"EpexData: ({self.ts}) {getattr(self, 'idc_av_price_eurmwh'):.2f} EUR/MWh"
+        )

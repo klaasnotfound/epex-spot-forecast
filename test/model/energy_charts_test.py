@@ -18,7 +18,7 @@ def test_init(market_data_point_1, market_data_point_2):
     mdp2 = EpexMarketDataPoint(1757890800000, vals=market_data_point_2)
     assert mdp2.ts == 1757890800000
     assert round(mdp2.load_kw, 1) == 39468.8
-    assert round(mdp2.idc_id3_price_eurmwh, 1) == 16.0
+    assert round(mdp2.idc_high_price_eurmwh, 1) == 64.6
 
 
 def test_init_table():
@@ -26,6 +26,16 @@ def test_init_table():
     EpexMarketDataPoint.init_table(con)
     assert "epex_market" in f"{con.sql('SHOW ALL TABLES')}"
     assert [(0,)] == con.sql("SELECT count(*) FROM epex_market").fetchall()
+
+
+def test_upsert_many(market_data_point_1, market_data_point_2):
+    con = duckdb.connect(":memory:")
+    EpexMarketDataPoint.init_table(con)
+    assert [(0,)] == con.sql("SELECT count(*) FROM epex_market").fetchall()
+    mdp1 = EpexMarketDataPoint(1757887200000, vals=market_data_point_1)
+    mdp2 = EpexMarketDataPoint(1757890800000, vals=market_data_point_2)
+    EpexMarketDataPoint.upsert_many([mdp1, mdp2], con)
+    assert [(2,)] == con.sql("SELECT count(*) FROM epex_market").fetchall()
 
 
 def test_repr(market_data_point_1):
@@ -45,8 +55,6 @@ def market_data_point_1():
         idc_av_price_eurmwh=25.46,
         idc_low_price_eurmwh=-4.05,
         idc_high_price_eurmwh=41.89,
-        idc_id3_price_eurmwh=22.19,
-        idc_id1_price_eurmwh=12.88,
     )
 
 
@@ -62,6 +70,4 @@ def market_data_point_2():
         idc_av_price_eurmwh=16.76,
         idc_low_price_eurmwh=2.27,
         idc_high_price_eurmwh=64.57,
-        idc_id3_price_eurmwh=16.01,
-        idc_id1_price_eurmwh=17.61,
     )

@@ -20,7 +20,7 @@ def get_weekly_market_data(year: int, week: int) -> list[EpexMarketDataPoint]:
 
     class TimeSeriesRef(TypedDict):
         q: str
-        d: NotRequired[ApiMarketData]
+        d: NotRequired[list[float]]
 
     time_series: dict[str, TimeSeriesRef] = {
         "phc": {"q": "pumped storage"},
@@ -32,8 +32,6 @@ def get_weekly_market_data(year: int, week: int) -> list[EpexMarketDataPoint]:
         "ida": {"q": "Intraday Continuous Average"},
         "idl": {"q": "Intraday Continuous Low"},
         "idh": {"q": "Intraday Continuous High"},
-        "id3": {"q": "Intraday Continuous ID3"},
-        "id1": {"q": "Intraday Continuous ID1"},
     }
     times: list[int] = []
 
@@ -66,8 +64,6 @@ def get_weekly_market_data(year: int, week: int) -> list[EpexMarketDataPoint]:
                     idc_av_price_eurmwh=time_series["ida"]["d"][idx],
                     idc_low_price_eurmwh=time_series["idl"]["d"][idx],
                     idc_high_price_eurmwh=time_series["idh"]["d"][idx],
-                    idc_id3_price_eurmwh=time_series["id3"]["d"][idx],
-                    idc_id1_price_eurmwh=time_series["id1"]["d"][idx],
                 ),
             )
         )
