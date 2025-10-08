@@ -42,6 +42,11 @@ class EpexMarketDataPoint:
         for attr in EpexMarketData.__annotations__:
             setattr(self, attr, vals[attr])
 
+    def __repr__(self):
+        return (
+            f"EpexData: ({self.ts}) {getattr(self, 'idc_av_price_eurmwh'):.2f} EUR/MWh"
+        )
+
     @staticmethod
     def init_table(con: DuckDBPyConnection):
         col_str = ", ".join(
@@ -78,8 +83,3 @@ class EpexMarketDataPoint:
         {val_str};
         """
         con.execute(stmt)
-
-    def __repr__(self):
-        return (
-            f"EpexData: ({self.ts}) {getattr(self, 'idc_av_price_eurmwh'):.2f} EUR/MWh"
-        )
