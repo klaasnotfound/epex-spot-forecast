@@ -1,6 +1,6 @@
 import calendar
 import time
-from typing import NotRequired, TypedDict, Union
+from typing import NotRequired, TypedDict
 
 from duckdb import DuckDBPyConnection
 from duckdb.typing import DuckDBPyType
@@ -15,7 +15,7 @@ class ApiI18nName(TypedDict):
 
 
 class ApiMarketData(TypedDict):
-    name: Union[ApiI18nName, list[ApiI18nName]]
+    name: ApiI18nName | list[ApiI18nName]
     data: list[float]
     xAxisValues: NotRequired[list[int]]
 
@@ -39,8 +39,7 @@ class EpexMarketDataPoint:
         assert ts > 0, "Timestamp must be > 0"
 
         self.ts = ts
-        attrs = EpexMarketData.__annotations__
-        for attr in attrs:
+        for attr in EpexMarketData.__annotations__:
             setattr(self, attr, vals[attr])
 
     @staticmethod
