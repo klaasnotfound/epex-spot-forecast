@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 from src.model.forecast import Location
 from src.model.geo import BBox, GeoJsonBB
-from src.model.open_meteo import OpenMeteoForecast
+from src.model.open_meteo import OpenMeteoForecast, OpenMeteoValues
 from src.util.math import normalize
 
 data_dir = os.path.normpath(f"{__file__}/../../../data")
@@ -40,25 +40,18 @@ def merge_forecasts(
 
     mlat = 0.0
     mlon = 0.0
-    days = forecasts[0].days
-    daySet = set(days)
-    dld = [0.0 for x in forecasts[0].daylight_dur]
-    ssd = [0.0 for x in forecasts[0].sunshine_dur]
+    times = forecasts[0].times
+    hourSet = set(times)
+    vals: dict[str, list[float]] = {}
+    for k in OpenMeteoValues.__annotations__:
+        vals[k] = [0.0 for x in getattr(forecasts[0], k)]
 
     for fcidx, fc in enumerate(forecasts):
         mlat += fc.lat * w[fcidx]
         mlon += fc.lon * w[fcidx]
-        for didx, d in enumerate(fc.days):
-            assert d in daySet, "Forecasts have mismatching days"
-            dld[didx] += fc.daylight_dur[didx] * w[fcidx]
-            ssd[didx] += fc.sunshine_dur[didx] * w[fcidx]
+        for didx, d in enumerate(fc.times):
+            assert d in hourSet, "Forecasts have mismatching hours"
+            for k in OpenMeteoValues.__annotations__:
+                vals[k][didx] += getattr(fc, k)[didx] * w[fcidx]
 
-    return OpenMeteoForecast(
-        mlat,
-        mlon,
-        days,
-        {
-            "daylight_duration": dld,
-            "sunshine_duration": ssd,
-        },
-    )
+    return OpenMeteoForecast(mlat, mlon, times, OpenMeteoValues(**vals))

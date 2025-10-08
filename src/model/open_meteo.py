@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 from dateutil.parser import parse
 
 
 class OpenMeteoValues(TypedDict):
+    temperature_2m: list[float]
     shortwave_radiation: list[float]
     direct_radiation: list[float]
     diffuse_radiation: list[float]
@@ -34,36 +35,33 @@ class OpenMeteoForecastData(TypedDict):
     elevation: int
     hourly_units: dict[str, str]
     hourly: OpenMeteoTimeSeries
-    daily_units: NotRequired[dict[str, str]]
-    daily: NotRequired[OpenMeteoTimeSeries]
 
 
 class OpenMeteoForecast:
     """Multi-day weather forecast from the OpenMeteo API"""
 
     def __init__(
-        self, lat: float, lon: float, days: list[datetime], vals: OpenMeteoValues
+        self, lat: float, lon: float, times: list[datetime], vals: OpenMeteoValues
     ):
         assert lat >= -90 and lat <= 90, "Latitude must be within [-90, 90]"
         assert lon >= -180 and lon <= 180, "Longitude must be within [-180, 180]"
-        assert "daylight_duration" in vals, "Value data must contain daylight duration"
-        assert "sunshine_duration" in vals, "Value data must contain sunshine duration"
-        assert len(days) > 0, "No dates in time series"
-        assert len(days) == len(vals["daylight_duration"]), "Wrong number of days"
-        assert len(days) == len(vals["sunshine_duration"]), "Wrong number of days"
+        assert len(times) > 0, "No dates in time series"
+        for k in OpenMeteoValues.__annotations__:
+            assert k in vals, f"Value data must contain '{k}'"
+            assert len(times) == len(vals[k]), "Wrong number of days"
 
         self.lat = lat
         self.lon = lon
-        self.days = days
-        self.daylight_dur = vals["daylight_duration"]
-        self.sunshine_dur = vals["sunshine_duration"]
+        self.times = times
+        for k in OpenMeteoValues.__annotations__:
+            setattr(self, k, vals[k])
 
     @staticmethod
     def fromjson(data: OpenMeteoForecastData):
-        days = [parse(d) for d in data["daily"]["time"]]
+        times = [parse(d) for d in data["hourly"]["time"]]
         return OpenMeteoForecast(
-            data["latitude"], data["longitude"], days, data["daily"]
+            data["latitude"], data["longitude"], times, data["hourly"]
         )
 
     def __repr__(self):
-        return f"OpenMeteoForecast ({self.lat}, {self.lon}) [{len(self.days)} day{'s'[: len(self.days) ^ 1]}]"
+        return f"OpenMeteoForecast ({self.lat}, {self.lon}) [{len(self.times)} hour{'s'[: len(self.times) ^ 1]}]"
