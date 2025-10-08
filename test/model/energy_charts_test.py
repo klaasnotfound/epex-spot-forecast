@@ -32,9 +32,9 @@ def test_upsert_many(em_data_1, em_data_2):
     con = duckdb.connect(":memory:")
     EpexMarketDataPoint.init_table(con)
     assert [(0,)] == con.sql("SELECT count(*) FROM epex_market").fetchall()
-    mdp1 = EpexMarketDataPoint(1757887200000, vals=em_data_1)
-    mdp2 = EpexMarketDataPoint(1757890800000, vals=em_data_2)
-    EpexMarketDataPoint.upsert_many([mdp1, mdp2], con)
+    dp1 = EpexMarketDataPoint(1757887200000, vals=em_data_1)
+    dp2 = EpexMarketDataPoint(1757890800000, vals=em_data_2)
+    EpexMarketDataPoint.upsert_many([dp1, dp2], con)
     assert [(2,)] == con.sql("SELECT count(*) FROM epex_market").fetchall()
 
 
