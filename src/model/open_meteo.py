@@ -108,11 +108,12 @@ class OpenMeteoForecastDataPoint:
         )
         stmt = f"""
         CREATE OR REPLACE TABLE open_meteo_hourly (
-            ts TIMESTAMP_MS PRIMARY KEY,
-            lat DOUBLE
-            lon DOUBLE
-            elev_m DOUBLE
-            {col_str}
+            ts TIMESTAMP_MS,
+            lat DOUBLE,
+            lon DOUBLE,
+            elev_m DOUBLE,
+            {col_str},
+            PRIMARY KEY (ts, lat, lon)
         );
         """
         con.execute(stmt)
@@ -123,8 +124,8 @@ class OpenMeteoForecastDataPoint:
             "("
             + "), (".join(
                 [
-                    f"make_timestamp_ms({d.ts.timestamp()}), "
-                    + f"{d.lat:.6f}, {d.lon:.6f}, {d.elev}"
+                    f"make_timestamp_ms({round(d.ts.timestamp())}), "
+                    + f"{d.lat:.6f}, {d.lon:.6f}, {d.elev},"
                     + ", ".join(
                         [
                             f"{getattr(d, k)}"

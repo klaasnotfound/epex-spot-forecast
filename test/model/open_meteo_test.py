@@ -1,3 +1,4 @@
+import duckdb
 import pytest
 from dateutil.parser import parse
 
@@ -28,6 +29,23 @@ def test_repr(fc_data_1: OpenMeteoForecastData):
     assert f"{dp}" == "ForecastData: (2023-01-01T00:00) [52.5, 13.4]@38m 15.9°C"
 
 
+def test_init_table():
+    con = duckdb.connect(":memory:")
+    OpenMeteoForecastDataPoint.init_table(con)
+    assert "open_meteo_hourly" in f"{con.sql('SHOW ALL TABLES')}"
+    assert [(0,)] == con.sql("SELECT count(*) FROM open_meteo_hourly").fetchall()
+
+
+def test_upsert_many(fc_data_1, fc_data_2):
+    con = duckdb.connect(":memory:")
+    OpenMeteoForecastDataPoint.init_table(con)
+    assert [(0,)] == con.sql("SELECT count(*) FROM open_meteo_hourly").fetchall()
+    dp1 = OpenMeteoForecastDataPoint(parse("2023-01-01T00:00"), 52, 13, 38, fc_data_1)
+    dp2 = OpenMeteoForecastDataPoint(parse("2023-01-01T01:00"), 52, 13, 38, fc_data_2)
+    OpenMeteoForecastDataPoint.upsert_many([dp1, dp2], con)
+    assert [(2,)] == con.sql("SELECT count(*) FROM open_meteo_hourly").fetchall()
+
+
 def test_fromjson(json_data):
     dps = OpenMeteoForecastDataPoint.fromjson(json_data)
     assert (dps[0].lat, dps[0].lon) == (52.52, 13.419998)
@@ -50,6 +68,25 @@ def fc_data_1() -> OpenMeteoForecastData:
         "cloud_cover_low_perc": 0,
         "cloud_cover_mid_perc": 48,
         "cloud_cover_high_perc": 100,
+        "visibility_m": 24140,
+        "precipitation_mm": 0,
+    }
+
+
+@pytest.fixture
+def fc_data_2() -> OpenMeteoForecastData:
+    return {
+        "temperature_2m_degc": 15.6,
+        "shortwave_radiation_wm2": 0,
+        "direct_radiation_wm2": 0,
+        "diffuse_radiation_wm2": 0,
+        "direct_normal_irradiance_wm2": 0,
+        "global_tilted_irradiance_wm2": 0,
+        "terrestrial_radiation_wm2": 0,
+        "cloud_cover_perc": 99,
+        "cloud_cover_low_perc": 29,
+        "cloud_cover_mid_perc": 0,
+        "cloud_cover_high_perc": 97,
         "visibility_m": 24140,
         "precipitation_mm": 0,
     }
