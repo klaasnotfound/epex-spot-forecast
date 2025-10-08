@@ -4,7 +4,11 @@ from typing import NamedTuple
 
 from src.model.forecast import Location
 from src.model.geo import BBox, GeoJsonBB
-from src.model.open_meteo import OpenMeteoForecast, OpenMeteoValues
+from src.model.open_meteo import (
+    ZERO_FC_DATA,
+    OpenMeteoForecastData,
+    OpenMeteoForecastDataPoint,
+)
 from src.util.math import normalize
 
 data_dir = os.path.normpath(f"{__file__}/../../../data")
@@ -28,8 +32,9 @@ def get_german_states() -> list[Location]:
 
 
 def merge_forecasts(
-    forecasts: list[OpenMeteoForecast], weights: list[float] | None = None
-) -> OpenMeteoForecast:
+    forecasts: list[list[OpenMeteoForecastDataPoint]],
+    weights: list[float] | None = None,
+) -> list[OpenMeteoForecastDataPoint]:
     """Merges several OpenMeteo forecasts into one, using optional weights."""
 
     w = weights or [1.0 for x in forecasts]
@@ -37,21 +42,20 @@ def merge_forecasts(
 
     assert len(forecasts) > 1, "Merging requires at least 2 forecasts"
     assert len(forecasts) == len(w), "Number of forecasts and weights must match"
+    for fc in forecasts[1:]:
+        assert len(fc) == len(forecasts[0]), "Forecasts have different lengths"
 
-    mlat = 0.0
-    mlon = 0.0
-    times = forecasts[0].times
-    hourSet = set(times)
-    vals: dict[str, list[float]] = {}
-    for k in OpenMeteoValues.__annotations__:
-        vals[k] = [0.0 for x in getattr(forecasts[0], k)]
-
+    merged: list[OpenMeteoForecastDataPoint] = [
+        OpenMeteoForecastDataPoint(dp.ts, 0, 0, 0, ZERO_FC_DATA) for dp in forecasts[0]
+    ]
     for fcidx, fc in enumerate(forecasts):
-        mlat += fc.lat * w[fcidx]
-        mlon += fc.lon * w[fcidx]
-        for didx, d in enumerate(fc.times):
-            assert d in hourSet, "Forecasts have mismatching hours"
-            for k in OpenMeteoValues.__annotations__:
-                vals[k][didx] += getattr(fc, k)[didx] * w[fcidx]
+        for dpidx, dp in enumerate(merged):
+            assert dp.ts == fc[dpidx].ts
+            dp.lat += fc[dpidx].lat * w[fcidx]
+            dp.lon += fc[dpidx].lon * w[fcidx]
+            dp.elev += fc[dpidx].elev * w[fcidx]
+            for k in OpenMeteoForecastData.__annotations__:
+                v = getattr(dp, k)
+                setattr(dp, k, v + getattr(fc[dpidx], k) * w[fcidx])
 
-    return OpenMeteoForecast(mlat, mlon, times, OpenMeteoValues(**vals))
+    return merged

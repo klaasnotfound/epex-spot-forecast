@@ -2,9 +2,11 @@ from datetime import datetime
 from typing import TypedDict
 
 from dateutil.parser import parse
+from duckdb import DuckDBPyConnection
+from duckdb.typing import DuckDBPyType
 
 
-class OpenMeteoValues(TypedDict):
+class ApiForecastValues(TypedDict):
     temperature_2m: list[float]
     shortwave_radiation: list[float]
     direct_radiation: list[float]
@@ -12,7 +14,6 @@ class OpenMeteoValues(TypedDict):
     direct_normal_irradiance: list[float]
     global_tilted_irradiance: list[float]
     terrestrial_radiation: list[float]
-    weather_code: list[float]
     cloud_cover: list[float]
     cloud_cover_low: list[float]
     cloud_cover_mid: list[float]
@@ -21,11 +22,11 @@ class OpenMeteoValues(TypedDict):
     precipitation: list[float]
 
 
-class OpenMeteoTimeSeries(OpenMeteoValues):
+class ApiTimeSeries(ApiForecastValues):
     time: list[str]
 
 
-class OpenMeteoForecastData(TypedDict):
+class ApiForecastData(TypedDict):
     latitude: float
     longitude: float
     generationtime_ms: float
@@ -34,34 +35,130 @@ class OpenMeteoForecastData(TypedDict):
     timezone_abbreviation: str
     elevation: int
     hourly_units: dict[str, str]
-    hourly: OpenMeteoTimeSeries
+    hourly: ApiTimeSeries
 
 
-class OpenMeteoForecast:
-    """Multi-day weather forecast from the OpenMeteo API"""
+class OpenMeteoForecastData(TypedDict):
+    temperature_2m_degc: float
+    shortwave_radiation_wm2: float
+    direct_radiation_wm2: float
+    diffuse_radiation_wm2: float
+    direct_normal_irradiance_wm2: float
+    global_tilted_irradiance_wm2: float
+    terrestrial_radiation_wm2: float
+    cloud_cover_perc: float
+    cloud_cover_low_perc: float
+    cloud_cover_mid_perc: float
+    cloud_cover_high_perc: float
+    visibility_m: float
+    precipitation_mm: float
+
+
+ZERO_FC_DATA = OpenMeteoForecastData(
+    temperature_2m_degc=0,
+    shortwave_radiation_wm2=0,
+    direct_radiation_wm2=0,
+    diffuse_radiation_wm2=0,
+    direct_normal_irradiance_wm2=0,
+    global_tilted_irradiance_wm2=0,
+    terrestrial_radiation_wm2=0,
+    cloud_cover_perc=0,
+    cloud_cover_low_perc=0,
+    cloud_cover_mid_perc=0,
+    cloud_cover_high_perc=0,
+    visibility_m=0,
+    precipitation_mm=0,
+)
+
+
+class OpenMeteoForecastDataPoint:
+    """Weather forecast data point (e.g. hourly) from the OpenMeteo API"""
 
     def __init__(
-        self, lat: float, lon: float, times: list[datetime], vals: OpenMeteoValues
+        self,
+        ts: datetime,
+        lat: float,
+        lon: float,
+        elev: float,
+        vals: OpenMeteoForecastData,
     ):
         assert lat >= -90 and lat <= 90, "Latitude must be within [-90, 90]"
         assert lon >= -180 and lon <= 180, "Longitude must be within [-180, 180]"
-        assert len(times) > 0, "No dates in time series"
-        for k in OpenMeteoValues.__annotations__:
-            assert k in vals, f"Value data must contain '{k}'"
-            assert len(times) == len(vals[k]), "Wrong number of days"
 
+        self.ts = ts
         self.lat = lat
         self.lon = lon
-        self.times = times
-        for k in OpenMeteoValues.__annotations__:
-            setattr(self, k, vals[k])
-
-    @staticmethod
-    def fromjson(data: OpenMeteoForecastData):
-        times = [parse(d) for d in data["hourly"]["time"]]
-        return OpenMeteoForecast(
-            data["latitude"], data["longitude"], times, data["hourly"]
-        )
+        self.elev = elev
+        for attr in OpenMeteoForecastData.__annotations__:
+            setattr(self, attr, vals[attr])
 
     def __repr__(self):
-        return f"OpenMeteoForecast ({self.lat}, {self.lon}) [{len(self.times)} hour{'s'[: len(self.times) ^ 1]}]"
+        return (
+            f"ForecastData: ({self.ts.isoformat()[:16]}) [{self.lat}, {self.lon}]@{round(self.elev)}m "
+            + f"{getattr(self, 'temperature_2m_degc'):.1f}°C"
+        )
+
+    @staticmethod
+    def init_table(con: DuckDBPyConnection):
+        col_str = ", ".join(
+            [
+                f"{k} {DuckDBPyType(v)}"
+                for k, v in OpenMeteoForecastData.__annotations__.items()
+            ]
+        )
+        stmt = f"""
+        CREATE OR REPLACE TABLE open_meteo_hourly (
+            ts TIMESTAMP_MS PRIMARY KEY,
+            lat DOUBLE
+            lon DOUBLE
+            elev_m DOUBLE
+            {col_str}
+        );
+        """
+        con.execute(stmt)
+
+    @staticmethod
+    def upsert_many(data: list["OpenMeteoForecastDataPoint"], con: DuckDBPyConnection):
+        val_str = (
+            "("
+            + "), (".join(
+                [
+                    f"make_timestamp_ms({d.ts.timestamp()}), "
+                    + f"{d.lat:.6f}, {d.lon:.6f}, {d.elev}"
+                    + ", ".join(
+                        [
+                            f"{getattr(d, k)}"
+                            for k in OpenMeteoForecastData.__annotations__
+                        ]
+                    ).replace("None", "NULL")
+                    for d in data
+                ]
+            )
+            + ")"
+        )
+        stmt = f"""
+        INSERT OR IGNORE INTO open_meteo_hourly VALUES
+        {val_str};
+        """
+        con.execute(stmt)
+
+    @staticmethod
+    def fromjson(data: ApiForecastData) -> list["OpenMeteoForecastDataPoint"]:
+        data_points: list["OpenMeteoForecastDataPoint"] = []
+        lat = data["latitude"]
+        lon = data["longitude"]
+        elev = data["elevation"]
+        hourly = data["hourly"]
+        for idx, time in enumerate(hourly["time"]):
+            ts = parse(time)
+            vals: dict[str, float] = {}
+            for k in OpenMeteoForecastData.__annotations__:
+                attr = "_".join(k.split("_")[:-1])
+                vals[k] = hourly[attr][idx]
+            data_points.append(
+                OpenMeteoForecastDataPoint(
+                    ts, lat, lon, elev, OpenMeteoForecastData(**vals)
+                )
+            )
+
+        return data_points

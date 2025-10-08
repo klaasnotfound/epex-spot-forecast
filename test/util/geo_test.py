@@ -1,7 +1,7 @@
 import pytest
 from dateutil.parser import parse
 
-from src.model.open_meteo import OpenMeteoForecast, OpenMeteoValues
+from src.model.open_meteo import OpenMeteoForecastData, OpenMeteoForecastDataPoint
 from src.util.geo import get_german_states, merge_forecasts
 
 
@@ -21,117 +21,124 @@ def test_merge_forecasts(forecasts):
     with pytest.raises(AssertionError):
         merge_forecasts([forecasts[0]])
     with pytest.raises(AssertionError):
-        merge_forecasts([forecasts[0], forecasts[1]], [1.0])
+        merge_forecasts(forecasts[:2], [1.0])
+    with pytest.raises(AssertionError):
+        merge_forecasts([forecasts[0], forecasts[2]])
 
     # Works as expected
     fc = merge_forecasts(forecasts[:2])
-    assert (fc.lat, fc.lon) == (48.5, 11.5)
-    assert [d.isoformat()[:10] for d in fc.times] == ["2025-09-17"]
-    assert getattr(fc, "global_tilted_irradiance") == [9.0]
+    assert (fc[0].lat, fc[0].lon, fc[0].elev) == (50, 12, 86.5)
+    assert fc[0].ts.isoformat()[:10] == "2025-09-17"
+    assert getattr(fc[0], "global_tilted_irradiance_wm2") == 16
 
     # Applies weights correctly
     fc = merge_forecasts(forecasts[:2], [3, 1])
-    assert (fc.lat, fc.lon) == (48.25, 11.25)
-    assert [d.isoformat()[:10] for d in fc.times] == ["2025-09-17"]
-    assert getattr(fc, "temperature_2m") == [1.25]
-    assert getattr(fc, "global_tilted_irradiance") == [7.5]
+    assert (fc[0].lat, fc[0].lon, fc[0].elev) == (49, 11.5, 54.75)
+    assert fc[0].ts.isoformat()[:10] == "2025-09-17"
+    assert round(getattr(fc[0], "temperature_2m_degc"), 2) == 15.23
+    assert round(getattr(fc[0], "global_tilted_irradiance_wm2"), 2) == 10.1
 
     # Works for longer forecasts
     fc = merge_forecasts(forecasts[2:4], [1, 9])
-    assert (round(fc.lat, 1), round(fc.lon, 1)) == (48.9, 11.9)
-    assert [d.isoformat()[:16] for d in fc.times] == [
-        "2025-09-18T00:00",
-        "2025-09-18T00:01",
+    assert (fc[1].lat, fc[1].lon, fc[1].elev) == (48.2, 10.9, 27.3)
+    assert [dp.ts.isoformat()[:16] for dp in fc] == [
+        "2025-09-17T00:00",
+        "2025-09-17T01:00",
     ]
-    assert [round(v, 1) for v in getattr(fc, "terrestrial_radiation")] == [13.3, 14.3]
-    assert [round(v, 1) for v in getattr(fc, "cloud_cover_mid")] == [22.7, 23.7]
+    assert [round(getattr(dp, "terrestrial_radiation_wm2"), 1) for dp in fc] == [
+        16.7,
+        155.3,
+    ]
 
     # Rejects non-overlapping forecasts
     with pytest.raises(AssertionError):
-        merge_forecasts(forecasts[-2:])
+        merge_forecasts(forecasts[3:])
 
 
-vals_1: OpenMeteoValues = {
-    "temperature_2m": [1],
-    "shortwave_radiation": [2],
-    "direct_radiation": [3],
-    "diffuse_radiation": [4],
-    "direct_normal_irradiance": [5],
-    "global_tilted_irradiance": [6],
-    "terrestrial_radiation": [7],
-    "weather_code": [8],
-    "cloud_cover": [9],
-    "cloud_cover_low": [10],
-    "cloud_cover_mid": [11],
-    "cloud_cover_high": [12],
-    "visibility": [13],
-    "precipitation": [14],
+fc_data_1: OpenMeteoForecastData = {
+    "temperature_2m_degc": 15.9,
+    "shortwave_radiation_wm2": 0,
+    "direct_radiation_wm2": 0,
+    "diffuse_radiation_wm2": 0,
+    "direct_normal_irradiance_wm2": 0,
+    "global_tilted_irradiance_wm2": 4.2,
+    "terrestrial_radiation_wm2": 0,
+    "cloud_cover_perc": 100,
+    "cloud_cover_low_perc": 0,
+    "cloud_cover_mid_perc": 48,
+    "cloud_cover_high_perc": 100,
+    "visibility_m": 24140,
+    "precipitation_mm": 0,
 }
 
-vals_2: OpenMeteoValues = {
-    "temperature_2m": [2],
-    "shortwave_radiation": [4],
-    "direct_radiation": [6],
-    "diffuse_radiation": [8],
-    "direct_normal_irradiance": [10],
-    "global_tilted_irradiance": [12],
-    "terrestrial_radiation": [14],
-    "weather_code": [16],
-    "cloud_cover": [18],
-    "cloud_cover_low": [20],
-    "cloud_cover_mid": [24],
-    "cloud_cover_high": [26],
-    "visibility": [28],
-    "precipitation": [30],
+fc_data_2: OpenMeteoForecastData = {
+    "temperature_2m_degc": 13.2,
+    "shortwave_radiation_wm2": 111,
+    "direct_radiation_wm2": 10,
+    "diffuse_radiation_wm2": 74,
+    "direct_normal_irradiance_wm2": 8.3,
+    "global_tilted_irradiance_wm2": 27.8,
+    "terrestrial_radiation_wm2": 167.2,
+    "cloud_cover_perc": 80,
+    "cloud_cover_low_perc": 5,
+    "cloud_cover_mid_perc": 72,
+    "cloud_cover_high_perc": 80,
+    "visibility_m": 16768,
+    "precipitation_mm": 0.9,
 }
 
-vals_3: OpenMeteoValues = {
-    "temperature_2m": [1, 2],
-    "shortwave_radiation": [2, 3],
-    "direct_radiation": [3, 4],
-    "diffuse_radiation": [4, 5],
-    "direct_normal_irradiance": [5, 6],
-    "global_tilted_irradiance": [6, 7],
-    "terrestrial_radiation": [7, 8],
-    "weather_code": [8, 9],
-    "cloud_cover": [9, 10],
-    "cloud_cover_low": [10, 11],
-    "cloud_cover_mid": [11, 12],
-    "cloud_cover_high": [12, 13],
-    "visibility": [13, 14],
-    "precipitation": [14, 15],
-}
-
-vals_4: OpenMeteoValues = {
-    "temperature_2m": [2, 3],
-    "shortwave_radiation": [4, 5],
-    "direct_radiation": [6, 7],
-    "diffuse_radiation": [8, 9],
-    "direct_normal_irradiance": [10, 11],
-    "global_tilted_irradiance": [12, 13],
-    "terrestrial_radiation": [14, 15],
-    "weather_code": [16, 17],
-    "cloud_cover": [18, 19],
-    "cloud_cover_low": [20, 21],
-    "cloud_cover_mid": [24, 25],
-    "cloud_cover_high": [26, 27],
-    "visibility": [28, 29],
-    "precipitation": [30, 31],
+fc_data_3: OpenMeteoForecastData = {
+    "temperature_2m_degc": 20.1,
+    "shortwave_radiation_wm2": 0,
+    "direct_radiation_wm2": 0,
+    "diffuse_radiation_wm2": 0,
+    "direct_normal_irradiance_wm2": 0,
+    "global_tilted_irradiance_wm2": 0,
+    "terrestrial_radiation_wm2": 48.6,
+    "cloud_cover_perc": 80,
+    "cloud_cover_low_perc": 5,
+    "cloud_cover_mid_perc": 72,
+    "cloud_cover_high_perc": 80,
+    "visibility_m": 16768,
+    "precipitation_mm": 0.9,
 }
 
 
 @pytest.fixture
-def forecasts():
+def forecasts() -> list[list[OpenMeteoForecastDataPoint]]:
     return [
-        OpenMeteoForecast(48, 11, [parse("2025-09-17")], vals_1),
-        OpenMeteoForecast(49, 12, [parse("2025-09-17")], vals_2),
-        OpenMeteoForecast(
-            48, 11, [parse("2025-09-18T00:00"), parse("2025-09-18T00:01")], vals_3
-        ),
-        OpenMeteoForecast(
-            49, 12, [parse("2025-09-18T00:00"), parse("2025-09-18T00:01")], vals_4
-        ),
-        OpenMeteoForecast(
-            50, 13, [parse("2025-09-18T17:00"), parse("2025-09-18T18:00")], vals_4
-        ),
+        [
+            OpenMeteoForecastDataPoint(
+                parse("2025-09-17T00:00"), 48, 11, 23, fc_data_1
+            ),
+        ],
+        [
+            OpenMeteoForecastDataPoint(
+                parse("2025-09-17T00:00"), 52, 13, 150, fc_data_2
+            ),
+        ],
+        [
+            OpenMeteoForecastDataPoint(
+                parse("2025-09-17T00:00"), 50, 10, 66, fc_data_2
+            ),
+            OpenMeteoForecastDataPoint(
+                parse("2025-09-17T01:00"), 50, 10, 66, fc_data_3
+            ),
+        ],
+        [
+            OpenMeteoForecastDataPoint(
+                parse("2025-09-17T00:00"), 48, 11, 23, fc_data_1
+            ),
+            OpenMeteoForecastDataPoint(
+                parse("2025-09-17T01:00"), 48, 11, 23, fc_data_2
+            ),
+        ],
+        [
+            OpenMeteoForecastDataPoint(
+                parse("2025-09-17T00:00"), 48, 11, 23, fc_data_1
+            ),
+            OpenMeteoForecastDataPoint(
+                parse("2025-09-18T00:00"), 48, 11, 23, fc_data_2
+            ),
+        ],
     ]
