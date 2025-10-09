@@ -1,11 +1,13 @@
 from typing import TypedDict
 
 
-class GeoJsonBB(TypedDict):
+class GeoStateInfo(TypedDict):
     minLat: float
     maxLat: float
     minLon: float
     maxLon: float
+    stationLat: float
+    stationLon: float
 
 
 class BBox:
@@ -14,8 +16,12 @@ class BBox:
     def __init__(self, min_lat: float, min_lon: float, max_lat: float, max_lon: float):
         assert min_lat >= -90 and min_lat <= 90, "Latitude must be within [-90, 90]"
         assert max_lat >= -90 and max_lat <= 90, "Latitude must be within [-90, 90]"
-        assert min_lon >= -180 and min_lon <= 180, "Longitude must be within [-180, 180]"
-        assert max_lon >= -180 and max_lon <= 180, "Longitude must be within [-180, 180]"
+        assert min_lon >= -180 and min_lon <= 180, (
+            "Longitude must be within [-180, 180]"
+        )
+        assert max_lon >= -180 and max_lon <= 180, (
+            "Longitude must be within [-180, 180]"
+        )
         assert max_lat > min_lat, "Max latitude must be greater than min latitude"
         assert max_lon > min_lon, "Max longitude must be greater than min longitude"
 
@@ -33,10 +39,12 @@ class BBox:
     def weight(self):
         """Weighted area of this bounding box (in [0, 1e6])"""
 
-        return (self.max_lon - self.min_lon) / 0.36 * (self.max_lat - self.min_lat) / 0.18
+        return (
+            (self.max_lon - self.min_lon) / 0.36 * (self.max_lat - self.min_lat) / 0.18
+        )
 
     @staticmethod
-    def fromjson(data: GeoJsonBB):
+    def fromjson(data: GeoStateInfo):
         """Create a bounding box from GeoJSON data (has to contain { "minLat": ...} values')."""
 
         return BBox(data["minLat"], data["minLon"], data["maxLat"], data["maxLon"])

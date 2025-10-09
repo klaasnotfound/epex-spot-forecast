@@ -3,7 +3,7 @@ import os
 from typing import NamedTuple
 
 from src.model.forecast import Location
-from src.model.geo import BBox, GeoJsonBB
+from src.model.geo import BBox, GeoStateInfo
 from src.model.open_meteo import (
     ZERO_FC_DATA,
     OpenMeteoForecastData,
@@ -23,10 +23,12 @@ def get_german_states() -> list[Location]:
 
     states: list[Location] = []
     with open(bbox_filepath) as f:
-        data: dict[str, GeoJsonBB] = json.load(f)
+        data: dict[str, GeoStateInfo] = json.load(f)
         for key in data:
             bb = BBox.fromjson(data[key])
-            states.append(Location(key, bb.lat_cnt, bb.lon_cnt, bb.weight))
+            lat = data[key]["stationLat"]
+            lon = data[key]["stationLon"]
+            states.append(Location(key, lat, lon, bb.weight))
 
     return states
 
