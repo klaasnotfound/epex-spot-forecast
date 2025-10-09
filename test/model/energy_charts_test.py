@@ -35,7 +35,8 @@ def test_upsert_many(em_data_1, em_data_2):
     dp1 = EpexMarketDataPoint(1757887200000, vals=em_data_1)
     dp2 = EpexMarketDataPoint(1757890800000, vals=em_data_2)
     EpexMarketDataPoint.upsert_many([dp1, dp2], con)
-    assert [(2,)] == con.sql("SELECT count(*) FROM epex_market").fetchall()
+    stmt = "SELECT count(*) FROM epex_market WHERE ts >= '2025-09-15'"
+    assert [(2,)] == con.sql(stmt).fetchall()
 
 
 @pytest.fixture

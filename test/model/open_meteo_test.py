@@ -43,7 +43,8 @@ def test_upsert_many(fc_data_1, fc_data_2):
     dp1 = OpenMeteoForecastDataPoint(parse("2023-01-01T00:00"), 52, 13, 38, fc_data_1)
     dp2 = OpenMeteoForecastDataPoint(parse("2023-01-01T01:00"), 52, 13, 38, fc_data_2)
     OpenMeteoForecastDataPoint.upsert_many([dp1, dp2], con)
-    assert [(2,)] == con.sql("SELECT count(*) FROM open_meteo_hourly").fetchall()
+    stmt = "SELECT count(*) FROM open_meteo_hourly WHERE ts >= '2023-01-01'"
+    assert [(2,)] == con.sql(stmt).fetchall()
 
 
 def test_fromjson(json_data):

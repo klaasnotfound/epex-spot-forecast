@@ -1,3 +1,5 @@
+import calendar
+import time
 from datetime import datetime
 from typing import TypedDict
 
@@ -124,7 +126,7 @@ class OpenMeteoForecastDataPoint:
             "("
             + "), (".join(
                 [
-                    f"make_timestamp_ms({round(d.ts.timestamp())}), "
+                    f"make_timestamp_ms({round(calendar.timegm(time.localtime(d.ts.timestamp())) * 1e3)}), "
                     + f"{d.lat:.6f}, {d.lon:.6f}, {d.elev},"
                     + ", ".join(
                         [
