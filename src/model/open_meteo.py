@@ -152,8 +152,8 @@ class OpenMeteoForecastDataPoint:
         lon = data["longitude"]
         elev = data["elevation"]
         hourly = data["hourly"]
-        for idx, time in enumerate(hourly["time"]):
-            ts = parse(time)
+        for idx, time_str in enumerate(hourly["time"]):
+            ts = parse(time_str)
             vals: dict[str, float] = {}
             for k in OpenMeteoForecastData.__annotations__:
                 attr = "_".join(k.split("_")[:-1])
