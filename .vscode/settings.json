@@ -9,5 +9,7 @@
       "source.unusedImports": "explicit"
     },
     "editor.formatOnType": true
-  }
+  },
+  "python.analysis.typeCheckingMode": "standard",
+  "python.analysis.autoImportCompletions": true
 }
