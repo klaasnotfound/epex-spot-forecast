@@ -38,5 +38,5 @@ cover/
 .ruff_cache
 
 # Data
-data/db/postgres
+data/db/*
 data/temp
