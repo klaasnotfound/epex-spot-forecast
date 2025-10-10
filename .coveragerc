@@ -2,6 +2,8 @@
 source = src/
 branch = True
 omit = src/app.py
+       src/scripts/*
 
 [report]
 show_missing = True
+include_namespace_packages = True
