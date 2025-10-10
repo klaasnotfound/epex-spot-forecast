@@ -101,7 +101,7 @@ class OpenMeteoForecastDataPoint:
         )
 
     @staticmethod
-    def init_table(con: DuckDBPyConnection):
+    def init_table(con: DuckDBPyConnection, tbl_name="open_meteo_hourly"):
         col_str = ", ".join(
             [
                 f"{k} {DuckDBPyType(v)}"
@@ -109,7 +109,7 @@ class OpenMeteoForecastDataPoint:
             ]
         )
         stmt = f"""
-        CREATE OR REPLACE TABLE open_meteo_hourly (
+        CREATE OR REPLACE TABLE {tbl_name} (
             ts TIMESTAMP_MS,
             lat DOUBLE,
             lon DOUBLE,
@@ -121,7 +121,11 @@ class OpenMeteoForecastDataPoint:
         con.execute(stmt)
 
     @staticmethod
-    def upsert_many(data: list["OpenMeteoForecastDataPoint"], con: DuckDBPyConnection):
+    def upsert_many(
+        data: list["OpenMeteoForecastDataPoint"],
+        con: DuckDBPyConnection,
+        tbl_name="open_meteo_hourly",
+    ):
         val_str = (
             "("
             + "), (".join(
@@ -140,7 +144,7 @@ class OpenMeteoForecastDataPoint:
             + ")"
         )
         stmt = f"""
-        INSERT OR IGNORE INTO open_meteo_hourly VALUES
+        INSERT OR IGNORE INTO {tbl_name} VALUES
         {val_str};
         """
         con.execute(stmt)
