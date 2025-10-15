@@ -1,6 +1,6 @@
 import pytest
 
-from src.util.geo import BBox
+from src.model.geo import BBox
 
 
 def test_init():
@@ -47,4 +47,9 @@ def test_fromjson(json_data):
 
 @pytest.fixture
 def json_data():
-    return {"minLat": 47.2703623267, "maxLat": 50.5644529365, "minLon": 8.9771580802, "maxLon": 13.8350427083}
+    return {
+        "minLat": 47.2703623267,
+        "maxLat": 50.5644529365,
+        "minLon": 8.9771580802,
+        "maxLon": 13.8350427083,
+    }
