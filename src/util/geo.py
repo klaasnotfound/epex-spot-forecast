@@ -3,7 +3,7 @@ import os
 from typing import NamedTuple
 
 from src.model.forecast import Location
-from src.model.geo import BBox, GeoStateInfo
+from src.model.geo import GeoStateInfo
 from src.model.open_meteo import (
     ZERO_FC_DATA,
     OpenMeteoForecastData,
@@ -12,7 +12,7 @@ from src.model.open_meteo import (
 from src.util.math import normalize
 
 data_dir = os.path.normpath(f"{__file__}/../../../data")
-bbox_filepath = f"{data_dir}/geo/german-states-bbox.json"
+bbox_filepath = f"{data_dir}/geo/german-states.json"
 
 
 LatLon = NamedTuple("LatLon", [("lat", float), ("lon", float)])
@@ -25,10 +25,10 @@ def get_german_states() -> list[Location]:
     with open(bbox_filepath) as f:
         data: dict[str, GeoStateInfo] = json.load(f)
         for key in data:
-            bb = BBox.fromjson(data[key])
             lat = data[key]["stationLat"]
             lon = data[key]["stationLon"]
-            states.append(Location(key, lat, lon, bb.weight))
+            cap = data[key]["instSolCapGw"]
+            states.append(Location(key, lat, lon, cap))
 
     return states
 
