@@ -38,6 +38,13 @@ jobs:
         run: |
           python -m pip install tox tox-gh-actions
 
+      - name: "Fix timezone"
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "Europe/Berlin"
+          timezoneMacos: "Europe/Berlin"
+          timezoneWindows: "Europe/Berlin"
+
       - name: "Run tox for ${{ matrix.python-version }}"
         run: |
           python -m tox
