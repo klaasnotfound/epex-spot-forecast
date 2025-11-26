@@ -15,16 +15,16 @@ def test_get_forecast():
     fc = get_forecast(52.52, 13.41)
     assert (fc[0].lat, fc[0].lon, fc[0].elev) == (52.52, 13.419998, 38)
     assert [dp.ts.isoformat()[:16] for dp in fc[:2]] == [
-        "2025-10-08T00:00",
-        "2025-10-08T01:00",
+        "2025-11-26T00:00",
+        "2025-11-26T01:00",
     ]
     assert [getattr(dp, "global_tilted_irradiance_wm2") for dp in fc[6:10]] == [
-        0.9,
-        5.6,
-        14.2,
-        46.6,
+        0.0,
+        0.5,
+        27.6,
+        82.8,
     ]
-    assert [getattr(dp, "precipitation_mm") for dp in fc[:3]] == [0.10, 0.00, 0.00]
+    assert [getattr(dp, "precipitation_mm") for dp in fc[:3]] == [0.0, 0.0, 0.0]
 
 
 @pytest.mark.vcr
@@ -38,8 +38,8 @@ def test_get_forecasts():
     )
     assert len(fc) == 3 * 7 * 24
     assert [dp.ts.isoformat()[:16] for dp in fc[:2]] == [
-        "2025-10-08T00:00",
-        "2025-10-08T01:00",
+        "2025-11-26T00:00",
+        "2025-11-26T01:00",
     ]
     assert (fc[0].lat, fc[0].lon, fc[0].elev) == (48.66, 9, 483)
     assert (fc[168].lat, fc[168].lon, fc[168].elev) == (48.92, 11.4, 450)

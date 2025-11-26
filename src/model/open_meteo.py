@@ -16,6 +16,9 @@ class ApiForecastValues(TypedDict):
     direct_normal_irradiance: list[float]
     global_tilted_irradiance: list[float]
     terrestrial_radiation: list[float]
+    wind_speed_10m: list[float]
+    wind_speed_80m: list[float]
+    wind_speed_120m: list[float]
     cloud_cover: list[float]
     cloud_cover_low: list[float]
     cloud_cover_mid: list[float]
@@ -48,6 +51,9 @@ class OpenMeteoForecastData(TypedDict):
     direct_normal_irradiance_wm2: float
     global_tilted_irradiance_wm2: float
     terrestrial_radiation_wm2: float
+    wind_speed_10m_kmh: float
+    wind_speed_80m_kmh: float
+    wind_speed_120m_kmh: float
     cloud_cover_perc: float
     cloud_cover_low_perc: float
     cloud_cover_mid_perc: float
@@ -64,6 +70,9 @@ ZERO_FC_DATA = OpenMeteoForecastData(
     direct_normal_irradiance_wm2=0,
     global_tilted_irradiance_wm2=0,
     terrestrial_radiation_wm2=0,
+    wind_speed_10m_kmh=0,
+    wind_speed_80m_kmh=0,
+    wind_speed_120m_kmh=0,
     cloud_cover_perc=0,
     cloud_cover_low_perc=0,
     cloud_cover_mid_perc=0,
