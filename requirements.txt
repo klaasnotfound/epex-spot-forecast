@@ -1,9 +1,14 @@
 colorama
 coverage
 duckdb
+ipykernel
+matplotlib
+pandas
 python-dateutil
 pytest
 pytest-recording
 requests
 ruff
+scikit-learn
+torch
 tox

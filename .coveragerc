@@ -3,6 +3,7 @@ source = src/
 branch = True
 omit = src/app.py
        src/scripts/*
+       src/notebooks/*
 
 [report]
 show_missing = True
