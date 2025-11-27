@@ -9,6 +9,7 @@ class GeoStateInfo(TypedDict):
     stationLat: float
     stationLon: float
     instSolCapGw: float
+    instWndCapGw: float
 
 
 class BBox:

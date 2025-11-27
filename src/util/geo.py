@@ -27,7 +27,7 @@ def get_german_states() -> list[Location]:
         for key in data:
             lat = data[key]["stationLat"]
             lon = data[key]["stationLon"]
-            cap = data[key]["instSolCapGw"]
+            cap = data[key]["instSolCapGw"] + data[key]["instWndCapGw"]
             states.append(Location(key, lat, lon, cap))
 
     return states
