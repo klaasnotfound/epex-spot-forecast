@@ -76,6 +76,10 @@ which will give you something like this:
 
 ## Prediction
 
+### Objective
+
+Our objective is to predict next-day electricity prices from the intraday auction.
+
 ### Models
 
 In the `/notebooks` folder, there are several Jupyter notebooks that walk you through the creation, training and evaluation of different prediction models:
@@ -121,6 +125,23 @@ The EPEX market data and the OpenMeteo weather data each contain several columns
 | wind_speed_120m_kmh          | Wind speed 120m above ground (in km/h)           |
 
 _Note_: There are [many more variables available](https://open-meteo.com/en/docs) in the OpenMeteo API; these were the ones deemed to have a potential influence on solar and wind output. The global tilted irradiance is queried with an azimuth of 0° (facing south) and a tilt of of 35°, which is the recommended configuration for utility-scale solar farms in Germany.
+
+## Results
+
+### LSTM
+
+The average absolute difference between the day-ahead price and the intraday price for the test period is 12.78 EUR. The performance of different LSTM topologies, averaged over 5 runs, is:
+
+| # Layers | Hidden Size | # Params | Ø Diff Pred. (EUR) | Blend factor | Ø Diff Blended (EUR) | Improvement (EUR) |
+| -------- | ----------- | -------- | ------------------ | ------------ | -------------------- | ----------------- |
+| 2        | 128         | 220753   | 21.11              | .2           | 12.07                | 0.71              |
+| 3        | 128         | 352849   | 20.95              | .2           | 12.07                | 0.71              |
+| 2        | 192         | 484721   | 20.90              | .2           | 12.04                | 0.74              |
+| 3        | 192         | 781169   | 20.44              | .2           | 12.10                | 0.68              |
+| 2        | 256         | 851089   | 20.28              | .2           | 11.97                | 0.81              |
+| 3        | 256         | 1377425  | 20.93              | .2           | 12.12                | 0.66              |
+
+
 
 ### Miscellaneous
 
