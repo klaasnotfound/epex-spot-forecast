@@ -6,9 +6,11 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/%F0%9F%90%8D_Python-gray" alt="Python">
-  <img src="https://img.shields.io/badge/%F0%9F%A6%86_DuckDB-gray" alt="DuckDB">
   <img src="https://img.shields.io/badge/PyTorch-ee4c2c?logo=pytorch&logoColor=white">
+  <img src="https://img.shields.io/badge/%F0%9F%A6%86_DuckDB-gray" alt="DuckDB">
+  <a href="https://github.com/klaasnotfound/epex-spot-forecast/actions">
   <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/klaasnotfound/38460a88beb57dcb08dc3a4ad0abba35/raw/covbadge.json" alt="Test coverage" />
+  </a>
 </p>
 
 ## What
@@ -78,7 +80,7 @@ which will give you something like:
 
 ### Objective
 
-Our objective is to predict the ad-hoc intraday auction electricity prices of the next day, i.e. the hourly price parties are willing to pay for electricity on short notice. It's important to understand that the day-ahead auction price already represents a _very good guess_ of what electricity should realistically cost during a given time on the next day. Until noon each day, market participants can enter their bid for one-hour intervals on the next day¹. These bids already factor in all information available at that time, including knowledge about the weather forecast, next-day generation capacity and obviously the individual urgency to procure the requested load. Bids are aggregated and the final price is calculated automatically by [the intersection of supply and demand curves](https://en.wikipedia.org/wiki/European_Power_Exchange#Day-ahead_markets).
+Our objective is to predict the intraday electricity prices of the next day, i.e. the hourly price parties are willing to pay for electricity on short notice. It's important to understand that the day-ahead auction price already represents a _very good guess_ of what electricity will realistically cost during a given time on the next day. Until noon each day, market participants can enter their bid for one-hour intervals on the next day¹. These bids factor in all information available at that time, including knowledge about the weather forecast, next-day generation capacity and the bidders' individual urgency to procure the requested load. Bids are aggregated and the final price is calculated automatically by [the intersection of supply and demand curves](https://en.wikipedia.org/wiki/European_Power_Exchange#Day-ahead_markets).
 
 ¹ <small>Technically, bids can be for 15-minute intervals, but we'll stick to a 1-hour resolution for this analysis.</small>
 
@@ -138,17 +140,17 @@ The average absolute difference between the day-ahead price and the intraday pri
 
 ### Blended Price
 
-The predictions from the trained long short-term memory model (as well as the gated recurrent unit model) captured the general intraday price movements well, but failed to be more accurate than the day-ahead price from the previous day. Here are 7 days from March 2025:
+The predictions from the trained long short-term memory model (as well as the gated recurrent unit model) capture the general intraday price movements well, but fail to be more accurate than the day-ahead price from the previous day. Here are 7 days from March 2025:
 
 ![Plot of the intraday price for two days in March 2025, overlayed with the previous day's day-ahead price and the price predicted by an LSTM](/data/assets/img-price-pred-02.png)
 
 This is likely due to external factors like increased supply or demand from individual market participants (e.g. for pumped hydro storage). These factors are known to the bidding parties and influence the day-ahead auction price but are not visible in the weather forecast or previous-day market data.
 
-Visual inspection of the data revealed something curious: More often than not, the predicted prices and the day-ahead prices seemed to be on opposite sides of the intraday price. The day-ahead price was generally "more correct", but the question was whether "blending in" a bit of the model prediction would yield an improved estimate. Defining the blended price as
+Visual inspection of the data revealed something curious: More often than not, the predicted prices and the day-ahead prices seemed to be on opposite sides of the intraday price. The day-ahead auction (DAA) price was generally "more correct", but the question was whether "blending in" a bit of the model prediction would yield an improved estimate. Defining the blended price as
 
-$$p_{blend} = \gamma \cdot p_{pred} + (1-\gamma) \cdot p_{day-ahead}$$
+$$p_{blend} = \gamma \cdot p_{pred} + (1-\gamma) \cdot p_{daa}$$
 
-and iterating over different $\gamma \in [0, 1]$ confirmed this assumption: A blend factor of $\gamma =$ `0.2` yielded maximum improvement (and this remained stable across different configurations and runs of the LSTM and GRU models). The model performance presented in the following was therefore no evaluted on the predicted price but on the _blended price_.
+and iterating over different $\gamma \in [0, 1]$ confirmed this assumption: A blend factor of $\gamma =$ `0.2` yielded maximum improvement (and this remained stable across different configurations and runs of the LSTM and GRU models). The model performance presented in the following is therefore not evaluted on the predicted price but on the _blended price_.
 
 <details>
 <summary>
@@ -210,6 +212,6 @@ Training the GRU model took significantly longer than the LSTM model and yielded
 | `4`      | `256`       | `1436305` | `20.72`            | `12.00`              | `0.78`            |
 | 4        | 384         | 3211217   | 20.80              | 12.06                | 0.72              |
 
-The best performance was achieved by a 4-layer GRU with 256 hidden units per layer. On average, blended GRU price predictions were `0.78 EUR` closer to the intraday price than the day-ahead price, the standard deviation was `13.49 EUR` (an improvement of `20.49 EUR`). While the performance is comparable, it definitely seems preferable to use the LSTM that requires only a fifth of the parameters.
+The best performance was achieved by a 4-layer GRU with 256 hidden units per layer. On average, blended GRU price predictions were `0.78 EUR` closer to the intraday price than the day-ahead price, the standard deviation was `13.49 EUR` (an improvement of `20.49 EUR`). While the performance is comparable to the LSTM model, it definitely seems preferable to use the LSTM, which requires only a fifth of the parameters.
 
 </details>
