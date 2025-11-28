@@ -134,7 +134,7 @@ _Note_: There are [many more variables available](https://open-meteo.com/en/docs
 
 ### Baseline
 
-The average absolute difference between the day-ahead price and the intraday price for the test period is `12.78 EUR`. That is to say: If you used yesterday's day-ahead price as the predictor, you would miss the intraday price by an average of `12.78 EUR`. These misses vary wildly - sometimes they're too high, sometimes too low, with a standard deviation of `33.99 EUR`. As an example, here are two days from March 2025:
+The average absolute difference between the day-ahead price and the intraday price for the test period is `12.78 EUR`. That is to say: If you used yesterday's day-ahead price as the predictor, you would miss the intraday price by an average of `12.78 EUR`. These misses vary wildly - sometimes they're too high, sometimes too low, with a standard deviation of `33.99 EUR`. As an example, here are three days from March 2025:
 
 ![Plot of the intraday price for two days in March 2025, overlayed with the previous day's day-ahead price](/data/assets/img-price-pred-01.png)
 
@@ -146,7 +146,7 @@ The predictions from the trained long short-term memory model (as well as the ga
 
 This is likely due to external factors like increased supply or demand from individual market participants (e.g. for pumped hydro storage). These factors are known to the bidding parties and influence the day-ahead auction price but are not visible in the weather forecast or previous-day market data.
 
-Visual inspection of the data revealed something curious: More often than not, the predicted prices and the day-ahead prices seemed to be on opposite sides of the intraday price. The day-ahead auction (DAA) price was generally "more correct", but the question was whether "blending in" a bit of the model prediction would yield an improved estimate. Defining the blended price as
+Visual inspection of the data revealed something interesting: More often than not, the predicted prices and the day-ahead prices seemed to be on opposite sides of the intraday price. The day-ahead auction (DAA) price was generally "more correct", but the question was whether "blending in" a bit of the model prediction would yield an improved estimate. Defining the blended price as
 
 $$p_{blend} = \gamma \cdot p_{pred} + (1-\gamma) \cdot p_{daa}$$
 
