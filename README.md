@@ -30,7 +30,7 @@ Unlike the stock market, where prices are driven by hidden signals and therefore
 - EPEX Market data comes from the [energy-charts.info](https://energy-charts.info/) portal run by Fraunhofer ISE.
 - Weather forecast data is sourced from the [OpenMeteo API](https://open-meteo.com/).
 
-_Note_: Both APIs provide generous free tiers for non-commercial use and data for different geographic regions; we focus on Germany alone.
+_Note_: Both APIs provide generous free tiers for non-commercial use and data for different geographic regions. Here, we focus on Germany alone.
 
 ### Setup
 
@@ -51,7 +51,7 @@ Several scripts let you to download and merge data from the above sources. Data 
 - `aggregate_forecasts` - merges all downloaded state forecasts into an average national forecast for Germany. This uses weights proportional to the installed wind and solar capacity in each state.
 - `download_epex_data` - downloads hourly EPEX Spot market data for 2015 - 2025. You might not need that many years, edit the script at the bottom to your liking.
 
-_Note_: Both download scripts provide a `reset` parameter, which - when `True` - will drop all data from the database prior to downloading. Fetching the weather data may take a while and you may see some slowdown due to rate limiting. As long as you use the data non-commercially and stay below 10k requests/day limit, you are within the limits of OpenMeteo's free tier and should be fine.
+_Note_: Both download scripts provide a `reset` parameter, which - when `True` - will drop the corresponding table from the database prior to downloading. Fetching the weather data may take a while and you may see some slowdown due to rate limiting. As long as you use the data non-commercially and stay below the 10k requests/day limit, you are within the limits of OpenMeteo's free tier and should be fine.
 
 ### Inspecting the data
 
@@ -70,15 +70,17 @@ WHERE open_meteo_agg_hourly.ts >= '2024-01-01'
 ORDER BY open_meteo_agg_hourly.ts
 ```
 
-which will give you something like this:
+which will give you something like:
 
-![Screenshot of DuckDB SQL tabel output](/data/assets//duckdb-ui-agg-data.png)
+![Screenshot of DuckDB SQL tabel output](/data/assets/img-duckdb-ui-agg-data.png)
 
 ## Prediction
 
 ### Objective
 
-Our objective is to predict next-day electricity prices from the intraday auction.
+Our objective is to predict the ad-hoc intraday auction electricity prices of the next day, i.e. the hourly price parties are willing to pay for electricity on short notice. It's important to understand that the day-ahead auction price already represents a _very good guess_ of what electricity should realistically cost during a given time on the next day. Until noon each day, market participants can enter their bid for one-hour intervals on the next day¹. These bids already factor in all information available at that time, including knowledge about the weather forecast, next-day generation capacity and obviously the individual urgency to procure the requested load. Bids are aggregated and the final price is calculated automatically by [the intersection of supply and demand curves](https://en.wikipedia.org/wiki/European_Power_Exchange#Day-ahead_markets).
+
+¹ <small>Technically, bids can be for 15-minute intervals, but we'll stick to a 1-hour resolution for this analysis.</small>
 
 ### Models
 
@@ -128,23 +130,86 @@ _Note_: There are [many more variables available](https://open-meteo.com/en/docs
 
 ## Results
 
-### LSTM
+### Baseline
 
-The average absolute difference between the day-ahead price and the intraday price for the test period is 12.78 EUR. The performance of different LSTM topologies, averaged over 5 runs, is:
+The average absolute difference between the day-ahead price and the intraday price for the test period is `12.78 EUR`. That is to say: If you used yesterday's day-ahead price as the predictor, you would miss the intraday price by an average of `12.78 EUR`. These misses vary wildly - sometimes they're too high, sometimes too low, with a standard deviation of `33.99 EUR`. As an example, here are two days from March 2025:
 
-| # Layers | Hidden Size | # Params | Ø Diff Pred. (EUR) | Blend factor | Ø Diff Blended (EUR) | Improvement (EUR) |
-| -------- | ----------- | -------- | ------------------ | ------------ | -------------------- | ----------------- |
-| 2        | 128         | 220753   | 21.11              | .2           | 12.07                | 0.71              |
-| 3        | 128         | 352849   | 20.95              | .2           | 12.07                | 0.71              |
-| 2        | 192         | 484721   | 20.90              | .2           | 12.04                | 0.74              |
-| 3        | 192         | 781169   | 20.44              | .2           | 12.10                | 0.68              |
-| 2        | 256         | 851089   | 20.28              | .2           | 11.97                | 0.81              |
-| 3        | 256         | 1377425  | 20.93              | .2           | 12.12                | 0.66              |
+![Plot of the intraday price for two days in March 2025, overlayed with the previous day's day-ahead price](/data/assets/img-price-pred-01.png)
 
+### Blended Price
 
+The predictions from the trained long short-term memory model (as well as the gated recurrent unit model) captured the general intraday price movements well, but failed to be more accurate than the day-ahead price from the previous day. Here are 7 days from March 2025:
 
-### Miscellaneous
+![Plot of the intraday price for two days in March 2025, overlayed with the previous day's day-ahead price and the price predicted by an LSTM](/data/assets/img-price-pred-02.png)
 
-The day-ahead auction already presents a _very_ good guess of what electricity should realistically cost during a given time on the next day. Until noon each day, market participants can enter their bid for one-hour intervals on the next day¹. Market participants are aware of the weather forecast, too, and include this data along with their
+This is likely due to external factors like increased supply or demand from individual market participants (e.g. for pumped hydro storage). These factors are known to the bidding parties and influence the day-ahead auction price but are not visible in the weather forecast or previous-day market data.
 
-¹ <small>Technically, bids can be for 15-minute intervals, but we'll stick to a 1-hour resolution for this analysis.</small>
+Visual inspection of the data revealed something curious: More often than not, the predicted prices and the day-ahead prices seemed to be on opposite sides of the intraday price. The day-ahead price was generally "more correct", but the question was whether "blending in" a bit of the model prediction would yield an improved estimate. Defining the blended price as
+
+$$p_{blend} = \gamma \cdot p_{pred} + (1-\gamma) \cdot p_{day-ahead}$$
+
+and iterating over different $\gamma \in [0, 1]$ confirmed this assumption: A blend factor of $\gamma =$ `0.2` yielded maximum improvement (and this remained stable across different configurations and runs of the LSTM and GRU models). The model performance presented in the following was therefore no evaluted on the predicted price but on the _blended price_.
+
+<details>
+<summary>
+<h3>LSTM</h3>
+</summary>
+
+The performance of different LSTM configurations (differing in the `num_layers` and `hidden_size`), averaged over 5 runs, is:
+
+| # Layers | Hidden Size | # Params | Ø Diff Pred. (EUR) | Ø Diff Blended (EUR) | Improvement (EUR) |
+| -------- | ----------- | -------- | ------------------ | -------------------- | ----------------- |
+| 2        | 64          | 59185    | 21.43              | 12.05                | 0.73              |
+| 3        | 64          | 92465    | 21.54              | 12.00                | 0.78              |
+| 4        | 64          | 125745   | 21.41              | 12.10                | 0.68              |
+| 2        | 96          | 127169   | 21.71              | 12.16                | 0.62              |
+| 3        | 96          | 201665   | 21.38              | 12.10                | 0.68              |
+| `2`      | `128`       | `220753` | `20.41`            | `11.97`              | `0.81`            |
+| 4        | 96          | 276161   | 21.76              | 12.21                | 0.58              |
+| 3        | 128         | 352849   | 21.09              | 12.08                | 0.70              |
+| 2        | 192         | 484721   | 20.66              | 12.03                | 0.75              |
+| 4        | 128         | 484945   | 21.10              | 12.14                | 0.64              |
+| 3        | 192         | 781169   | 21.23              | 12.18                | 0.60              |
+| 2        | 256         | 851089   | 21.20              | 12.04                | 0.74              |
+| 4        | 192         | 1077617  | 21.08              | 12.05                | 0.73              |
+| 3        | 256         | 1377425  | 20.46              | 12.05                | 0.73              |
+| 2        | 384         | 1891025  | 20.57              | 12.03                | 0.75              |
+| 4        | 256         | 1903761  | 21.09              | 12.19                | 0.59              |
+| 3        | 384         | 3073745  | 20.90              | 12.12                | 0.66              |
+| 4        | 384         | 4256465  | 20.61              | 11.98                | 0.81              |
+
+The best performance was achieved by a 2-layer LSTM with 256 hidden units per layer. On average, the blended predictions are `0.81 EUR` better than the day-ahead auction price. What's more is that the standard deviation of the absolute differences (between blended and actual price) is `13.47 EUR` (a `20.51 EUR` improvement over the day-ahead standard deviation). In other words, the blended predictions tend to over- and undershoot the intraday price way less than the day-ahead auction price.
+
+</details>
+
+<details>
+<summary>
+<h3>GRU</h3>
+</summary>
+
+Training the GRU model took significantly longer than the LSTM model and yielded slightly worse results.
+
+| # Layers | Hidden Size | # Params  | Ø Diff Pred. (EUR) | Ø Diff Blended (EUR) | Improvement (EUR) |
+| -------- | ----------- | --------- | ------------------ | -------------------- | ----------------- |
+| 2        | 64          | 44977     | 20.94              | 12.03                | 0.75              |
+| 3        | 64          | 69937     | 21.37              | 12.09                | 0.69              |
+| 2        | 96          | 96641     | 20.75              | 12.04                | 0.74              |
+| 3        | 96          | 152513    | 20.83              | 12.06                | 0.72              |
+| 2        | 128         | 167761    | 20.80              | 12.06                | 0.72              |
+| 3        | 128         | 266833    | 20.95              | 12.09                | 0.69              |
+| 2        | 192         | 368369    | 20.82              | 12.06                | 0.72              |
+| 3        | 192         | 590705    | 20.91              | 12.04                | 0.74              |
+| 2        | 256         | 646801    | 21.15              | 12.13                | 0.65              |
+| 3        | 256         | 1041553   | 21.17              | 12.09                | 0.69              |
+| 2        | 384         | 1437137   | 20.82              | 12.03                | 0.75              |
+| 3        | 384         | 2324177   | 20.59              | 12.04                | 0.74              |
+| 4        | 64          | 94897     | 21.12              | 12.01                | 0.77              |
+| 4        | 96          | 208385    | 21.09              | 12.02                | 0.76              |
+| 4        | 128         | 365905    | 20.69              | 12.01                | 0.77              |
+| 4        | 192         | 813041    | 20.80              | 12.04                | 0.74              |
+| `4`      | `256`       | `1436305` | `20.72`            | `12.00`              | `0.78`            |
+| 4        | 384         | 3211217   | 20.80              | 12.06                | 0.72              |
+
+The best performance was achieved by a 4-layer GRU with 256 hidden units per layer. On average, blended GRU price predictions were `0.78 EUR` closer to the intraday price than the day-ahead price, the standard deviation was `13.49 EUR` (an improvement of `20.49 EUR`). While the performance is comparable, it definitely seems preferable to use the LSTM that requires only a fifth of the parameters.
+
+</details>
