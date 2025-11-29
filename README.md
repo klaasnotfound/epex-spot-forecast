@@ -144,13 +144,13 @@ The predictions from the trained long short-term memory model (as well as the ga
 
 ![Plot of the intraday price for two days in March 2025, overlayed with the previous day's day-ahead price and the price predicted by an LSTM](/data/assets/img-price-pred-02.png)
 
-This is likely due to external factors like increased supply or demand from individual market participants (e.g. for pumped hydro storage). These factors are known to the bidding parties and influence the day-ahead auction price but are not visible in the weather forecast or previous-day market data.
+A possible reason for this is that the electricity price is not just influenced by "regular" weather-induced supply and demand, but also by bulk bids from individual market participants with over- or undersupply (e.g. when charging/discharging pumped hydro storage). These factors are known to the bidding parties and influence the day-ahead auction price but are not visible in the weather forecast or previous-day market data.
 
 Visual inspection of the data revealed something interesting: More often than not, the predicted prices and the day-ahead prices seemed to be on opposite sides of the intraday price. The day-ahead auction (DAA) price was generally "more correct", but the question was whether "blending in" a bit of the model prediction would yield an improved estimate. Defining the blended price as
 
 $$p_{blend} = \gamma \cdot p_{pred} + (1-\gamma) \cdot p_{daa}$$
 
-and iterating over different $\gamma \in [0, 1]$ confirmed this assumption: A blend factor of $\gamma =$ `0.2` yielded maximum improvement (and this remained stable across different configurations and runs of the LSTM and GRU models). The model performance presented in the following is therefore not evaluted on the predicted price but on the _blended price_.
+and iterating over different $\gamma \in [0, 1]$ confirmed this assumption: A blend factor of $\gamma$ = `0.2` yielded maximum improvement (and this remained stable across different configurations and runs of the LSTM and GRU models). The model performance presented in the following is therefore not evaluted on the predicted price but on the _blended price_ (with $\gamma$ = `0.2` ).
 
 <details>
 <summary>
