@@ -161,26 +161,26 @@ The performance of different LSTM configurations (differing in the `num_layers` 
 
 | # Layers | Hidden Size | # Params | Ø Diff Pred. (EUR) | Ø Diff Blended (EUR) | Improvement (EUR) |
 | -------- | ----------- | -------- | ------------------ | -------------------- | ----------------- |
-| 2        | 64          | 59185    | 21.43              | 12.05                | 0.73              |
-| 3        | 64          | 92465    | 21.54              | 12.00                | 0.78              |
-| 4        | 64          | 125745   | 21.41              | 12.10                | 0.68              |
-| 2        | 96          | 127169   | 21.71              | 12.16                | 0.62              |
-| 3        | 96          | 201665   | 21.38              | 12.10                | 0.68              |
-| `2`      | `128`       | `220753` | `20.41`            | `11.97`              | `0.81`            |
-| 4        | 96          | 276161   | 21.76              | 12.21                | 0.58              |
-| 3        | 128         | 352849   | 21.09              | 12.08                | 0.70              |
-| 2        | 192         | 484721   | 20.66              | 12.03                | 0.75              |
-| 4        | 128         | 484945   | 21.10              | 12.14                | 0.64              |
-| 3        | 192         | 781169   | 21.23              | 12.18                | 0.60              |
-| 2        | 256         | 851089   | 21.20              | 12.04                | 0.74              |
-| 4        | 192         | 1077617  | 21.08              | 12.05                | 0.73              |
-| 3        | 256         | 1377425  | 20.46              | 12.05                | 0.73              |
-| 2        | 384         | 1891025  | 20.57              | 12.03                | 0.75              |
-| 4        | 256         | 1903761  | 21.09              | 12.19                | 0.59              |
-| 3        | 384         | 3073745  | 20.90              | 12.12                | 0.66              |
-| 4        | 384         | 4256465  | 20.61              | 11.98                | 0.81              |
+| 2        | 64          | 58161    | 20.73              | 12.03                | 0.75              |
+| `3`      | `64`        | `91441`  | `20.85`            | `11.91`              | `0.88`            |
+| 4        | 64          | 124721   | 20.82              | 12.05                | 0.73              |
+| 2        | 96          | 125633   | 20.99              | 11.94                | 0.84              |
+| 3        | 96          | 200129   | 20.79              | 11.97                | 0.81              |
+| 4        | 96          | 274625   | 20.98              | 12.06                | 0.73              |
+| 2        | 128         | 218705   | 20.93              | 12.07                | 0.71              |
+| 3        | 128         | 350801   | 21.17              | 12.10                | 0.68              |
+| 4        | 128         | 482897   | 20.53              | 12.00                | 0.78              |
+| 2        | 192         | 481649   | 20.78              | 12.01                | 0.77              |
+| 3        | 192         | 778097   | 21.05              | 12.04                | 0.74              |
+| 4        | 192         | 1074545  | 21.38              | 12.08                | 0.70              |
+| 2        | 256         | 846993   | 20.67              | 11.99                | 0.79              |
+| 3        | 256         | 1373329  | 21.26              | 12.01                | 0.77              |
+| 4        | 256         | 1899665  | 21.40              | 12.10                | 0.69              |
+| 2        | 384         | 1884881  | 20.69              | 12.00                | 0.79              |
+| 3        | 384         | 3067601  | 21.22              | 12.11                | 0.67              |
+| 4        | 384         | 4250321  | 21.43              | 12.09                | 0.69              |
 
-The best performance was achieved by a 2-layer LSTM with 256 hidden units per layer. On average, the blended predictions are `0.81 EUR` better than the day-ahead auction price. What's more is that the standard deviation of the absolute differences (between blended and actual price) is `13.47 EUR` (a `20.51 EUR` improvement over the day-ahead standard deviation). In other words, the blended predictions tend to over- and undershoot the intraday price way less than the day-ahead auction price.
+The best performance was achieved by a 3-layer LSTM with 64 hidden units per layer. On average, the blended predictions are `0.88 EUR` better than the day-ahead auction price. What's more is that the standard deviation of the absolute differences (between blended and intraday price) is `13.44 EUR` (a `20.54 EUR` improvement over the day-ahead difference standard deviation). In other words, the blended predictions tend to over- and undershoot the intraday price way less than the day-ahead auction price.
 
 </details>
 
@@ -189,29 +189,29 @@ The best performance was achieved by a 2-layer LSTM with 256 hidden units per la
 <h3>GRU</h3>
 </summary>
 
-Training the GRU model took significantly longer than the LSTM model and yielded slightly worse results.
+Training the GRU model took significantly longer than the LSTM model and yielded basically the same results.
 
-| # Layers | Hidden Size | # Params  | Ø Diff Pred. (EUR) | Ø Diff Blended (EUR) | Improvement (EUR) |
-| -------- | ----------- | --------- | ------------------ | -------------------- | ----------------- |
-| 2        | 64          | 44977     | 20.94              | 12.03                | 0.75              |
-| 3        | 64          | 69937     | 21.37              | 12.09                | 0.69              |
-| 2        | 96          | 96641     | 20.75              | 12.04                | 0.74              |
-| 3        | 96          | 152513    | 20.83              | 12.06                | 0.72              |
-| 2        | 128         | 167761    | 20.80              | 12.06                | 0.72              |
-| 3        | 128         | 266833    | 20.95              | 12.09                | 0.69              |
-| 2        | 192         | 368369    | 20.82              | 12.06                | 0.72              |
-| 3        | 192         | 590705    | 20.91              | 12.04                | 0.74              |
-| 2        | 256         | 646801    | 21.15              | 12.13                | 0.65              |
-| 3        | 256         | 1041553   | 21.17              | 12.09                | 0.69              |
-| 2        | 384         | 1437137   | 20.82              | 12.03                | 0.75              |
-| 3        | 384         | 2324177   | 20.59              | 12.04                | 0.74              |
-| 4        | 64          | 94897     | 21.12              | 12.01                | 0.77              |
-| 4        | 96          | 208385    | 21.09              | 12.02                | 0.76              |
-| 4        | 128         | 365905    | 20.69              | 12.01                | 0.77              |
-| 4        | 192         | 813041    | 20.80              | 12.04                | 0.74              |
-| `4`      | `256`       | `1436305` | `20.72`            | `12.00`              | `0.78`            |
-| 4        | 384         | 3211217   | 20.80              | 12.06                | 0.72              |
+| # Layers | Hidden Size | # Params | Ø Diff Pred. (EUR) | Ø Diff Blended (EUR) | Improvement (EUR) |
+| -------- | ----------- | -------- | ------------------ | -------------------- | ----------------- |
+| 2        | 64          | 44209    | 20.65              | 11.96                | 0.82              |
+| 3        | 64          | 69169    | 20.74              | 11.96                | 0.82              |
+| 4        | 64          | 94129    | 20.72              | 11.99                | 0.79              |
+| 2        | 96          | 95489    | 20.39              | 11.94                | 0.84              |
+| 3        | 96          | 151361   | 20.81              | 12.00                | 0.78              |
+| 4        | 96          | 207233   | 20.78              | 11.92                | 0.86              |
+| `2`      | `128`       | `166225` | `20.72`            | `11.91`              | `0.87`            |
+| 3        | 128         | 265297   | 21.11              | 12.06                | 0.72              |
+| 4        | 128         | 364369   | 20.91              | 12.00                | 0.78              |
+| 2        | 192         | 366065   | 21.13              | 11.98                | 0.80              |
+| 3        | 192         | 588401   | 21.13              | 12.03                | 0.75              |
+| 4        | 192         | 810737   | 20.98              | 11.98                | 0.80              |
+| 2        | 256         | 643729   | 21.57              | 12.03                | 0.75              |
+| 3        | 256         | 1038481  | 21.24              | 12.10                | 0.68              |
+| 4        | 256         | 1433233  | 21.13              | 11.91                | 0.87              |
+| 2        | 384         | 1432529  | 21.71              | 12.15                | 0.63              |
+| 3        | 384         | 2319569  | 21.77              | 12.14                | 0.64              |
+| 4        | 384         | 3206609  | 21.40              | 12.08                | 0.70              |
 
-The best performance was achieved by a 4-layer GRU with 256 hidden units per layer. On average, blended GRU price predictions were `0.78 EUR` closer to the intraday price than the day-ahead price, the standard deviation was `13.49 EUR` (an improvement of `20.49 EUR`). While the performance is comparable to the LSTM model, it definitely seems preferable to use the LSTM, which requires only a fifth of the parameters.
+The best performance was achieved by a 2-layer GRU with 128 hidden units per layer. On average, blended GRU price predictions were `0.87 EUR` closer to the intraday price than the day-ahead price, the standard deviation was `13.42 EUR` (an improvement of `20.56 EUR`). While the performance is comparable to the LSTM model, it definitely seems preferable to use the LSTM, which could be trained much faster and requires only half the number of parameters.
 
 </details>
