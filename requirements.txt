@@ -1,3 +1,4 @@
+chronos-forecasting>=2.0
 colorama
 coverage
 duckdb
